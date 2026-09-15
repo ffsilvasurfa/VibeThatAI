@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 2 Self-Test — Reflex Agents, State Machines & Behaviour Trees</title>
+<style>
+  :root{
+    --bg:#EEF1F4;
+    --surface:#FFFFFF;
+    --ink:#101828;
+    --ink-soft:#475467;
+    --accent:#0F766E;
+    --accent-soft:#E4F3F1;
+    --danger:#B42318;
+    --danger-soft:#FBEAE8;
+    --border:#D0D5DD;
+  }
+  *{box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:32px 16px 64px;
+  }
+  .wrap{ width:100%; max-width:620px; }
+  header{
+    display:flex;
+    align-items:baseline;
+    gap:18px;
+    margin-bottom:24px;
+  }
+  .week-num{
+    font-family:Georgia,"Iowan Old Style",serif;
+    font-size:56px;
+    font-weight:600;
+    color:var(--accent);
+    line-height:1;
+  }
+  .head-text h1{
+    font-family:Georgia,"Iowan Old Style",serif;
+    font-size:22px;
+    margin:0 0 4px;
+  }
+  .head-text p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+  .progress-track{
+    height:6px;
+    background:var(--border);
+    border-radius:3px;
+    overflow:hidden;
+    margin-bottom:8px;
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--accent);
+    width:0%;
+    transition:width .3s ease;
+  }
+  .progress-label{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:20px;
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:28px;
+  }
+  .prompt{
+    font-size:17px;
+    font-weight:600;
+    margin:0 0 20px;
+  }
+  .option{
+    display:block;
+    width:100%;
+    text-align:left;
+    padding:14px 16px;
+    margin-bottom:10px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-size:15px;
+    color:var(--ink);
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .option:hover:not(:disabled){ border-color:var(--accent); }
+  .option:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+  .option.correct{ background:var(--accent-soft); border-color:var(--accent); }
+  .option.incorrect{ background:var(--danger-soft); border-color:var(--danger); }
+  .option:disabled{ cursor:default; }
+  .feedback{
+    margin-top:16px;
+    padding:14px 16px;
+    border-radius:8px;
+    font-size:14px;
+    display:none;
+  }
+  .feedback.show{ display:block; }
+  .feedback.correct-fb{ background:var(--accent-soft); color:#0B4F49; }
+  .feedback.incorrect-fb{ background:var(--danger-soft); color:#7A1913; }
+  .feedback strong{ display:block; margin-bottom:4px; }
+  .actions{ margin-top:20px; display:flex; justify-content:flex-end; }
+  button.next{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:11px 22px;
+    border-radius:8px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    display:none;
+    font-family:inherit;
+  }
+  button.next.show{ display:inline-block; }
+  button.next:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
+  .summary{ text-align:center; }
+  .summary .score{
+    font-family:Georgia,"Iowan Old Style",serif;
+    font-size:48px;
+    color:var(--accent);
+    margin:8px 0;
+  }
+  .retake{
+    margin-top:20px;
+    background:none;
+    border:1px solid var(--border);
+    padding:10px 18px;
+    border-radius:8px;
+    font-size:14px;
+    cursor:pointer;
+    font-family:inherit;
+    color:var(--ink);
+  }
+  footer{
+    margin-top:20px;
+    font-size:12px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="week-num" id="weekNum">01</div>
+    <div class="head-text">
+      <h1 id="quizTitle">Loading…</h1>
+      <p id="quizDesc"></p>
+    </div>
+  </header>
+
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-label" id="progressLabel"></div>
+
+  <div class="card" id="card"></div>
+
+  <footer>Your score is only shown to you. Anonymous, aggregate answer data helps improve future sessions.</footer>
+</div>
+
+<script>
+// ---- CONFIG: swap this object per week, keep the engine below unchanged ----
+const QUIZ_CONFIG = {
+  week: "week2",
+  weekLabel: "02",
+  title: "Reflex Agents, State Machines & Behaviour Trees",
+  description: "Self-test: simple reflex vs model-based agents, finite state machines, and behaviour trees.",
+  // Paste your Apps Script /exec URL here once deployed. Leave blank to disable stats posting.
+  scriptUrl: "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE",
+  questions: [
+    {
+      id: "q1",
+      prompt: "In a finite state machine (FSM), what triggers a transition from one state to another?",
+      options: [
+        { id: "a", text: "A condition or event becoming true, defined on that transition" },
+        { id: "b", text: "The passage of a fixed amount of real time only" },
+        { id: "c", text: "A random number generator, every frame" },
+        { id: "d", text: "The state machine restarting from scratch" },
+      ],
+      correct: "a",
+      explanation: "Transitions fire when their guard condition or triggering event becomes true — e.g. \"health < 20%\" moving an NPC from Patrol to Flee."
+    },
+    {
+      id: "q2",
+      prompt: "What is the main scalability problem large FSMs run into as more states and behaviours are added?",
+      options: [
+        { id: "a", text: "FSMs cannot represent more than two states" },
+        { id: "b", text: "The number of transitions can grow rapidly, making the machine hard to read and maintain" },
+        { id: "c", text: "FSMs require a neural network to run" },
+        { id: "d", text: "States can no longer have any actions attached" },
+      ],
+      correct: "b",
+      explanation: "Every new state potentially needs transitions to and from many existing states, so the transition graph can grow much faster than the state count — often called \"state explosion\"."
+    },
+    {
+      id: "q3",
+      prompt: "In a behaviour tree, what does a Sequence node do?",
+      options: [
+        { id: "a", text: "Runs all of its children at the same time" },
+        { id: "b", text: "Picks one child at random and runs only that one" },
+        { id: "c", text: "Runs its children in order, and fails as soon as one child fails" },
+        { id: "d", text: "Runs its children in order, and succeeds as soon as one child succeeds" },
+      ],
+      correct: "c",
+      explanation: "A Sequence succeeds only if every child succeeds, in order — it's the behaviour-tree equivalent of a logical AND, and stops (fails) at the first failing child."
+    },
+    {
+      id: "q4",
+      prompt: "What does a Selector (sometimes called a Fallback) node do in a behaviour tree?",
+      options: [
+        { id: "a", text: "Tries each child in order and succeeds as soon as one child succeeds" },
+        { id: "b", text: "Requires all children to succeed before it succeeds" },
+        { id: "c", text: "Always executes every child regardless of outcome" },
+        { id: "d", text: "Deletes failed children from the tree" },
+      ],
+      correct: "a",
+      explanation: "A Selector is the behaviour-tree equivalent of a logical OR: it tries children in order and stops (succeeds) at the first one that succeeds, falling back to the next option otherwise."
+    },
+    {
+      id: "q5",
+      prompt: "Why do many game AI systems prefer behaviour trees over one large hand-built FSM?",
+      options: [
+        { id: "a", text: "Behaviour trees can't be edited by designers" },
+        { id: "b", text: "Behaviour trees are modular — subtrees can be reused and recombined without redrawing a whole transition graph" },
+        { id: "c", text: "Behaviour trees don't need any conditions at all" },
+        { id: "d", text: "Behaviour trees only work for two-state agents" },
+      ],
+      correct: "b",
+      explanation: "Because behaviour trees compose from small reusable subtrees, adding new behaviour is more like plugging in a new branch than redesigning the whole transition graph, which is what makes them scale better in practice."
+    }
+  ]
+};
+// ---- END CONFIG ----
+
+let current = 0;
+let score = 0;
+const total = QUIZ_CONFIG.questions.length;
+
+document.getElementById("weekNum").textContent = QUIZ_CONFIG.weekLabel;
+document.getElementById("quizTitle").textContent = QUIZ_CONFIG.title;
+document.getElementById("quizDesc").textContent = QUIZ_CONFIG.description;
+
+function postResult(questionId, chosen, correct){
+  if (!QUIZ_CONFIG.scriptUrl || QUIZ_CONFIG.scriptUrl.startsWith("PASTE_")) return;
+  try{
+    fetch(QUIZ_CONFIG.scriptUrl, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        week: QUIZ_CONFIG.week,
+        question_id: questionId,
+        chosen: chosen,
+        correct: correct
+      })
+    });
+  }catch(err){ /* fail silently, stats are best-effort */ }
+}
+
+function renderQuestion(){
+  const q = QUIZ_CONFIG.questions[current];
+  document.getElementById("progressLabel").textContent = `Question ${current+1} of ${total}`;
+  document.getElementById("progressFill").style.width = `${(current/total)*100}%`;
+
+  const card = document.getElementById("card");
+  card.innerHTML = "";
+
+  const promptEl = document.createElement("p");
+  promptEl.className = "prompt";
+  promptEl.textContent = q.prompt;
+  card.appendChild(promptEl);
+
+  q.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.textContent = opt.text;
+    btn.addEventListener("click", () => selectOption(opt.id, btn));
+    card.appendChild(btn);
+  });
+
+  const fb = document.createElement("div");
+  fb.className = "feedback";
+  fb.id = "feedback";
+  card.appendChild(fb);
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "next";
+  nextBtn.id = "nextBtn";
+  nextBtn.textContent = current === total - 1 ? "See results" : "Next question";
+  nextBtn.addEventListener("click", advance);
+  actions.appendChild(nextBtn);
+  card.appendChild(actions);
+}
+
+function selectOption(chosenId, btnEl){
+  const q = QUIZ_CONFIG.questions[current];
+  const isCorrect = chosenId === q.correct;
+  if (isCorrect) score++;
+
+  document.querySelectorAll(".option").forEach(b => {
+    b.disabled = true;
+    if (b === btnEl) b.classList.add(isCorrect ? "correct" : "incorrect");
+    if (!isCorrect && b.textContent === q.options.find(o => o.id === q.correct).text){
+      b.classList.add("correct");
+    }
+  });
+
+  const fb = document.getElementById("feedback");
+  fb.classList.add("show", isCorrect ? "correct-fb" : "incorrect-fb");
+  fb.innerHTML = `<strong>${isCorrect ? "Correct." : "Not quite."}</strong>${q.explanation}`;
+
+  document.getElementById("nextBtn").classList.add("show");
+  postResult(q.id, chosenId, isCorrect);
+}
+
+function advance(){
+  current++;
+  if (current < total){
+    renderQuestion();
+  }else{
+    showSummary();
+  }
+}
+
+function showSummary(){
+  document.getElementById("progressFill").style.width = "100%";
+  document.getElementById("progressLabel").textContent = "Complete";
+  const card = document.getElementById("card");
+  card.innerHTML = `
+    <div class="summary">
+      <p>You scored</p>
+      <div class="score">${score} / ${total}</div>
+      <button class="retake" id="retakeBtn">Retake quiz</button>
+    </div>
+  `;
+  document.getElementById("retakeBtn").addEventListener("click", () => {
+    current = 0; score = 0; renderQuestion();
+  });
+}
+
+renderQuestion();
+</script>
+</body>
+</html>

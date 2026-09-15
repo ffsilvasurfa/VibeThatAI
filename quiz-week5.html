@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 5 Self-Test — Knowledge Representation & Reasoning</title>
+<style>
+  :root{
+    --bg:#EEF1F4;
+    --surface:#FFFFFF;
+    --ink:#101828;
+    --ink-soft:#475467;
+    --accent:#0F766E;
+    --accent-soft:#E4F3F1;
+    --danger:#B42318;
+    --danger-soft:#FBEAE8;
+    --border:#D0D5DD;
+  }
+  *{box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:32px 16px 64px;
+  }
+  .wrap{ width:100%; max-width:620px; }
+  header{
+    display:flex;
+    align-items:baseline;
+    gap:18px;
+    margin-bottom:24px;
+  }
+  .week-num{
+    font-family:Georgia,"Iowan Old Style",serif;
+    font-size:56px;
+    font-weight:600;
+    color:var(--accent);
+    line-height:1;
+  }
+  .head-text h1{
+    font-family:Georgia,"Iowan Old Style",serif;
+    font-size:22px;
+    margin:0 0 4px;
+  }
+  .head-text p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+  .progress-track{
+    height:6px;
+    background:var(--border);
+    border-radius:3px;
+    overflow:hidden;
+    margin-bottom:8px;
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--accent);
+    width:0%;
+    transition:width .3s ease;
+  }
+  .progress-label{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:20px;
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:28px;
+  }
+  .prompt{
+    font-size:17px;
+    font-weight:600;
+    margin:0 0 20px;
+  }
+  .option{
+    display:block;
+    width:100%;
+    text-align:left;
+    padding:14px 16px;
+    margin-bottom:10px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-size:15px;
+    color:var(--ink);
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .option:hover:not(:disabled){ border-color:var(--accent); }
+  .option:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+  .option.correct{ background:var(--accent-soft); border-color:var(--accent); }
+  .option.incorrect{ background:var(--danger-soft); border-color:var(--danger); }
+  .option:disabled{ cursor:default; }
+  .feedback{
+    margin-top:16px;
+    padding:14px 16px;
+    border-radius:8px;
+    font-size:14px;
+    display:none;
+  }
+  .feedback.show{ display:block; }
+  .feedback.correct-fb{ background:var(--accent-soft); color:#0B4F49; }
+  .feedback.incorrect-fb{ background:var(--danger-soft); color:#7A1913; }
+  .feedback strong{ display:block; margin-bottom:4px; }
+  .actions{ margin-top:20px; display:flex; justify-content:flex-end; }
+  button.next{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:11px 22px;
+    border-radius:8px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    display:none;
+    font-family:inherit;
+  }
+  button.next.show{ display:inline-block; }
+  button.next:focus-visible{ outline:3px solid var(--ink); outline-offset:2px; }
+  .summary{ text-align:center; }
+  .summary .score{
+    font-family:Georgia,"Iowan Old Style",serif;
+    font-size:48px;
+    color:var(--accent);
+    margin:8px 0;
+  }
+  .retake{
+    margin-top:20px;
+    background:none;
+    border:1px solid var(--border);
+    padding:10px 18px;
+    border-radius:8px;
+    font-size:14px;
+    cursor:pointer;
+    font-family:inherit;
+    color:var(--ink);
+  }
+  footer{
+    margin-top:20px;
+    font-size:12px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="week-num" id="weekNum">01</div>
+    <div class="head-text">
+      <h1 id="quizTitle">Loading…</h1>
+      <p id="quizDesc"></p>
+    </div>
+  </header>
+
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-label" id="progressLabel"></div>
+
+  <div class="card" id="card"></div>
+
+  <footer>Your score is only shown to you. Anonymous, aggregate answer data helps improve future sessions.</footer>
+</div>
+
+<script>
+// ---- CONFIG: swap this object per week, keep the engine below unchanged ----
+const QUIZ_CONFIG = {
+  week: "week5",
+  weekLabel: "05",
+  title: "Knowledge Representation & Reasoning",
+  description: "Self-test: logical agents, the Wumpus World, and inference.",
+  // Paste your Apps Script /exec URL here once deployed. Leave blank to disable stats posting.
+  scriptUrl: "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE",
+  questions: [
+    {
+      id: "q1",
+      prompt: "What is the Wumpus World primarily used to illustrate in AI teaching?",
+      options: [
+        { id: "a", text: "How to train a neural network on image data" },
+        { id: "b", text: "How a logical agent can infer safe/unsafe locations from partial, uncertain percepts" },
+        { id: "c", text: "How to implement alpha-beta pruning" },
+        { id: "d", text: "How genetic algorithms evolve solutions" },
+      ],
+      correct: "b",
+      explanation: "The Wumpus World is a classic partially-observable environment used to show how an agent can combine percepts (like a breeze or a stench) with logical rules to infer facts about squares it can't directly see."
+    },
+    {
+      id: "q2",
+      prompt: "In the Wumpus World, a \"breeze\" in a square is a percept that indicates:",
+      options: [
+        { id: "a", text: "The Wumpus is definitely in that exact square" },
+        { id: "b", text: "An adjacent square contains a pit" },
+        { id: "c", text: "There is gold in that square" },
+        { id: "d", text: "The agent has already visited that square before" },
+      ],
+      correct: "b",
+      explanation: "A breeze is felt in any square adjacent to a pit — it doesn't say which adjacent square, which is exactly the kind of uncertainty the agent has to reason about."
+    },
+    {
+      id: "q3",
+      prompt: "What is the key difference between propositional logic and first-order logic?",
+      options: [
+        { id: "a", text: "First-order logic adds objects, relations, and quantifiers (like \"for all\" / \"there exists\")" },
+        { id: "b", text: "Propositional logic can express quantifiers but first-order logic cannot" },
+        { id: "c", text: "They are exactly the same, just written differently" },
+        { id: "d", text: "First-order logic cannot represent facts about the world" },
+      ],
+      correct: "a",
+      explanation: "Propositional logic only deals with whole statements being true/false, while first-order logic can talk about objects, their properties, relations between them, and generalise with quantifiers."
+    },
+    {
+      id: "q4",
+      prompt: "\"If P is true, and P implies Q, then Q is true\" is an example of which inference rule?",
+      options: [
+        { id: "a", text: "Modus ponens" },
+        { id: "b", text: "Resolution" },
+        { id: "c", text: "Backward chaining" },
+        { id: "d", text: "Unification" },
+      ],
+      correct: "a",
+      explanation: "Modus ponens is exactly this pattern: from P and (P → Q), we can conclude Q. It's one of the most basic and widely used inference rules."
+    },
+    {
+      id: "q5",
+      prompt: "In knowledge representation, what does it mean to say a knowledge base \"entails\" a sentence α?",
+      options: [
+        { id: "a", text: "α happens to be written somewhere in the knowledge base's text" },
+        { id: "b", text: "In every model (world) where the knowledge base is true, α is also true" },
+        { id: "c", text: "α is false in at least one model where the knowledge base is true" },
+        { id: "d", text: "The knowledge base is too large to contain α" },
+      ],
+      correct: "b",
+      explanation: "Entailment is a semantic notion: KB ⊨ α means α must hold in every possible world consistent with the knowledge base — it follows necessarily, not just by coincidence."
+    }
+  ]
+};
+// ---- END CONFIG ----
+
+let current = 0;
+let score = 0;
+const total = QUIZ_CONFIG.questions.length;
+
+document.getElementById("weekNum").textContent = QUIZ_CONFIG.weekLabel;
+document.getElementById("quizTitle").textContent = QUIZ_CONFIG.title;
+document.getElementById("quizDesc").textContent = QUIZ_CONFIG.description;
+
+function postResult(questionId, chosen, correct){
+  if (!QUIZ_CONFIG.scriptUrl || QUIZ_CONFIG.scriptUrl.startsWith("PASTE_")) return;
+  try{
+    fetch(QUIZ_CONFIG.scriptUrl, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        week: QUIZ_CONFIG.week,
+        question_id: questionId,
+        chosen: chosen,
+        correct: correct
+      })
+    });
+  }catch(err){ /* fail silently, stats are best-effort */ }
+}
+
+function renderQuestion(){
+  const q = QUIZ_CONFIG.questions[current];
+  document.getElementById("progressLabel").textContent = `Question ${current+1} of ${total}`;
+  document.getElementById("progressFill").style.width = `${(current/total)*100}%`;
+
+  const card = document.getElementById("card");
+  card.innerHTML = "";
+
+  const promptEl = document.createElement("p");
+  promptEl.className = "prompt";
+  promptEl.textContent = q.prompt;
+  card.appendChild(promptEl);
+
+  q.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.textContent = opt.text;
+    btn.addEventListener("click", () => selectOption(opt.id, btn));
+    card.appendChild(btn);
+  });
+
+  const fb = document.createElement("div");
+  fb.className = "feedback";
+  fb.id = "feedback";
+  card.appendChild(fb);
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "next";
+  nextBtn.id = "nextBtn";
+  nextBtn.textContent = current === total - 1 ? "See results" : "Next question";
+  nextBtn.addEventListener("click", advance);
+  actions.appendChild(nextBtn);
+  card.appendChild(actions);
+}
+
+function selectOption(chosenId, btnEl){
+  const q = QUIZ_CONFIG.questions[current];
+  const isCorrect = chosenId === q.correct;
+  if (isCorrect) score++;
+
+  document.querySelectorAll(".option").forEach(b => {
+    b.disabled = true;
+    if (b === btnEl) b.classList.add(isCorrect ? "correct" : "incorrect");
+    if (!isCorrect && b.textContent === q.options.find(o => o.id === q.correct).text){
+      b.classList.add("correct");
+    }
+  });
+
+  const fb = document.getElementById("feedback");
+  fb.classList.add("show", isCorrect ? "correct-fb" : "incorrect-fb");
+  fb.innerHTML = `<strong>${isCorrect ? "Correct." : "Not quite."}</strong>${q.explanation}`;
+
+  document.getElementById("nextBtn").classList.add("show");
+  postResult(q.id, chosenId, isCorrect);
+}
+
+function advance(){
+  current++;
+  if (current < total){
+    renderQuestion();
+  }else{
+    showSummary();
+  }
+}
+
+function showSummary(){
+  document.getElementById("progressFill").style.width = "100%";
+  document.getElementById("progressLabel").textContent = "Complete";
+  const card = document.getElementById("card");
+  card.innerHTML = `
+    <div class="summary">
+      <p>You scored</p>
+      <div class="score">${score} / ${total}</div>
+      <button class="retake" id="retakeBtn">Retake quiz</button>
+    </div>
+  `;
+  document.getElementById("retakeBtn").addEventListener("click", () => {
+    current = 0; score = 0; renderQuestion();
+  });
+}
+
+renderQuestion();
+</script>
+</body>
+</html>
