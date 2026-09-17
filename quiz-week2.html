@@ -181,18 +181,18 @@ const QUIZ_CONFIG = {
   title: "Reflex Agents, State Machines & Behaviour Trees",
   description: "Self-test: simple reflex vs model-based agents, finite state machines, and behaviour trees.",
   // Paste your Apps Script /exec URL here once deployed. Leave blank to disable stats posting.
-  scriptUrl: "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE",
+  scriptUrl: "https://script.google.com/macros/s/AKfycbztDBCGXWrFKII5lmecQ2cvsmb38-Ve0CCwHb6rxu-AxPf2F5vC51dmT9HVrNJ2/exec",
   questions: [
     {
       id: "q1",
       prompt: "In a finite state machine (FSM), what triggers a transition from one state to another?",
       options: [
-        { id: "a", text: "A condition or event becoming true, defined on that transition" },
+        { id: "a", text: "A random number generator, every frame" },
         { id: "b", text: "The passage of a fixed amount of real time only" },
-        { id: "c", text: "A random number generator, every frame" },
+        { id: "c", text: "A condition or event becoming true, defined on that transition" },
         { id: "d", text: "The state machine restarting from scratch" },
       ],
-      correct: "a",
+      correct: "c",
       explanation: "Transitions fire when their guard condition or triggering event becomes true — e.g. \"health < 20%\" moving an NPC from Patrol to Flee."
     },
     {
@@ -236,11 +236,11 @@ const QUIZ_CONFIG = {
       prompt: "Why do many game AI systems prefer behaviour trees over one large hand-built FSM?",
       options: [
         { id: "a", text: "Behaviour trees can't be edited by designers" },
-        { id: "b", text: "Behaviour trees are modular — subtrees can be reused and recombined without redrawing a whole transition graph" },
+        { id: "b", text: "Behaviour trees only work for two-state agents" },
         { id: "c", text: "Behaviour trees don't need any conditions at all" },
-        { id: "d", text: "Behaviour trees only work for two-state agents" },
+        { id: "d", text: "Behaviour trees are modular — subtrees can be reused and recombined without redrawing a whole transition graph" },
       ],
-      correct: "b",
+      correct: "d",
       explanation: "Because behaviour trees compose from small reusable subtrees, adding new behaviour is more like plugging in a new branch than redesigning the whole transition graph, which is what makes them scale better in practice."
     }
   ]
