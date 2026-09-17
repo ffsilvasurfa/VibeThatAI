@@ -181,7 +181,7 @@ const QUIZ_CONFIG = {
   title: "Knowledge Representation & Reasoning",
   description: "Self-test: logical agents, the Wumpus World, and inference.",
   // Paste your Apps Script /exec URL here once deployed. Leave blank to disable stats posting.
-  scriptUrl: "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE",
+  scriptUrl: "https://script.google.com/macros/s/AKfycbztDBCGXWrFKII5lmecQ2cvsmb38-Ve0CCwHb6rxu-AxPf2F5vC51dmT9HVrNJ2/exec",
   questions: [
     {
       id: "q1",
@@ -200,11 +200,11 @@ const QUIZ_CONFIG = {
       prompt: "In the Wumpus World, a \"breeze\" in a square is a percept that indicates:",
       options: [
         { id: "a", text: "The Wumpus is definitely in that exact square" },
-        { id: "b", text: "An adjacent square contains a pit" },
-        { id: "c", text: "There is gold in that square" },
+        { id: "b", text: "There is gold in that square" },
+        { id: "c", text: "An adjacent square contains a pit" },
         { id: "d", text: "The agent has already visited that square before" },
       ],
-      correct: "b",
+      correct: "c",
       explanation: "A breeze is felt in any square adjacent to a pit — it doesn't say which adjacent square, which is exactly the kind of uncertainty the agent has to reason about."
     },
     {
@@ -223,12 +223,12 @@ const QUIZ_CONFIG = {
       id: "q4",
       prompt: "\"If P is true, and P implies Q, then Q is true\" is an example of which inference rule?",
       options: [
-        { id: "a", text: "Modus ponens" },
+        { id: "a", text: "Unification" },
         { id: "b", text: "Resolution" },
         { id: "c", text: "Backward chaining" },
-        { id: "d", text: "Unification" },
+        { id: "d", text: "Modus ponens" },
       ],
-      correct: "a",
+      correct: "d",
       explanation: "Modus ponens is exactly this pattern: from P and (P → Q), we can conclude Q. It's one of the most basic and widely used inference rules."
     },
     {
