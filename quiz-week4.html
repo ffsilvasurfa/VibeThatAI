@@ -181,7 +181,7 @@ const QUIZ_CONFIG = {
   title: "Adversarial Search & Games",
   description: "Self-test: minimax, alpha-beta pruning, and Monte Carlo Tree Search.",
   // Paste your Apps Script /exec URL here once deployed. Leave blank to disable stats posting.
-  scriptUrl: "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE",
+  scriptUrl: "https://script.google.com/macros/s/AKfycbztDBCGXWrFKII5lmecQ2cvsmb38-Ve0CCwHb6rxu-AxPf2F5vC51dmT9HVrNJ2/exec",
   questions: [
     {
       id: "q1",
@@ -224,11 +224,11 @@ const QUIZ_CONFIG = {
       prompt: "Why is MCTS often preferred over plain minimax for games like Go?",
       options: [
         { id: "a", text: "Go has too few possible moves for minimax to run at all" },
-        { id: "b", text: "MCTS doesn't need a hand-crafted evaluation function and copes better with huge branching factors" },
+        { id: "b", text: "Minimax cannot be used for any two-player game" },
         { id: "c", text: "MCTS guarantees a perfect, optimal move every time" },
-        { id: "d", text: "Minimax cannot be used for any two-player game" },
+        { id: "d", text: "MCTS doesn't need a hand-crafted evaluation function and copes better with huge branching factors" },
       ],
-      correct: "b",
+      correct: "d",
       explanation: "Go's branching factor is far too large to search exhaustively, and a good evaluation function is hard to hand-design — MCTS sidesteps both by using random playouts to estimate move quality."
     },
     {
