@@ -181,18 +181,18 @@ const QUIZ_CONFIG = {
   title: "Search & Problem Solving",
   description: "Self-test: uninformed search (BFS/DFS) and informed search (A*, heuristics).",
   // Paste your Apps Script /exec URL here once deployed. Leave blank to disable stats posting.
-  scriptUrl: "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE",
+  scriptUrl: "https://script.google.com/macros/s/AKfycbztDBCGXWrFKII5lmecQ2cvsmb38-Ve0CCwHb6rxu-AxPf2F5vC51dmT9HVrNJ2/exec",
   questions: [
     {
       id: "q1",
       prompt: "Breadth-first search (BFS) explores the search tree:",
       options: [
-        { id: "a", text: "Level by level, expanding all nodes at depth d before depth d+1" },
+        { id: "a", text: "By only expanding nodes with a heuristic value of zero" },
         { id: "b", text: "By always following the deepest unexplored path first" },
         { id: "c", text: "By picking a random unexplored node each step" },
-        { id: "d", text: "By only expanding nodes with a heuristic value of zero" },
+        { id: "d", text: "Level by level, expanding all nodes at depth d before depth d+1" },
       ],
-      correct: "a",
+      correct: "d",
       explanation: "BFS expands nodes in order of increasing depth, which is why it's guaranteed to find a shallowest solution first (and is optimal when all step costs are equal)."
     },
     {
