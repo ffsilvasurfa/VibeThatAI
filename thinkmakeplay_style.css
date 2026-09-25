@@ -1,0 +1,141 @@
+<style type="text/css">
+
+body{
+   font-family:sans-serif;
+   padding-left:25px
+}
+
+
+P {font-family:sans-serif; font-size:14; color:black; overflow:visible; margin-top:10px; margin-bottom:10px; padding-right:10px; padding-left:10pt;	}
+
+A {font-family:sans-serif; font-size:14; color:black; overflow:visible;}
+
+LI {font-family:sans-serif; font-size:14; color:gray}
+
+H1 {font-family:sans-serif; font-size:120; color:#ffffff;
+margin-bottom:10px; padding-right:10px; padding-left:10pt;}
+
+H2 {font-family:sans-serif; font-size:16; color:#006699; margin-top:10px; margin-bottom:10px; padding-right:10px; padding-left:10pt;}
+
+header {font-family:sans-serif; 
+//position:absolute; top:5px; left:25px
+}
+
+video {
+        width: 480px;
+        height: 384px;
+        border: 1px solid gray;
+		padding:10px
+}
+      
+      .video-container {
+        //display: inline-block;
+        text-align: center;
+}
+
+section {
+//border-color:gray; 
+//border-style:solid;
+//-moz-border-radius:10px;
+//-webkit-border-radius:10px;
+//border-radius:10px; //for opera
+//background:#f3f3f3;
+//border:1px solid #cccccc;
+//padding:100px;
+//position:absolute;  //top:150px; //left:25px; 
+width:550px;
+}
+
+#col1 {
+//border:1px solid #cccccc;
+position:absolute;   
+left:25px; 
+width:180px;
+}
+#col2 {
+//border:1px solid #cccccc;
+position:absolute;   
+left:205px; 
+width:180px;
+}
+#col3 {
+//border:1px solid #cccccc;
+position:absolute;   
+left:385px; 
+width:180px;
+}
+#col4 {
+//border:1px solid #cccccc;
+position:absolute;   
+left:565px; 
+width:180px;
+}
+
+aside {
+//border-color:gray; 
+//border-style:solid;
+-moz-border-radius:10px;
+-webkit-border-radius:10px;
+border-radius:10px; //for opera
+background:#f3f3f3;
+border:1px solid #cccccc;
+
+position:absolute; top:130px; left:605px; width:200px;
+}
+
+nav {
+background:#93f3f3;
+width:800px; 
+height:40px;
+
+-moz-border-radius-topleft:10px;
+-moz-border-radius-topright:10px;
+border-radius:10px; // for Opera
+border:1px solid #000099;
+//position:absolute; 
+left:25px;
+//top:80px; 
+
+}
+nav ul {
+list-style-image:none;
+list-style-position:outside;
+list-style-type:none;
+margin:0 auto;
+//width:800px;
+}
+nav ul li {
+float:left;
+margin-right:20px;
+display:block;
+line-height:40px;
+}
+nav ul li a{
+float:left;
+margin-right:20px;
+display:block;
+line-height:40px;
+}
+
+
+#my-green-div {
+  //position: absolute;
+  //background-color: green;
+  //color: white;
+  left: 0px;
+  top: 100px;
+  width: 100px;
+  height: 100px;
+}
+footer{
+background:#000099;
+border-top:1px solid #cccccc;
+
+-moz-border-radius-topleft:10px;
+-moz-border-radius-topright:10px;
+border-radius:10px; // for Opera
+text-align:center; color:#ffffff;
+position: absolute; bottom:25px; left:25px;
+width:800px; height:40px;
+}
+</style>
