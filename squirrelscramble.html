@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squirrel Scramble — Budgeted Foraging on a Weighted Tree</title>
+<style>
+  :root{
+    --bg:#EEF1F4;
+    --surface:#FFFFFF;
+    --ink:#101828;
+    --ink-soft:#475467;
+    --accent:#0F766E;
+    --accent-soft:#E4F3F1;
+    --danger:#B42318;
+    --danger-soft:#FBEAE8;
+    --warn:#B7791F;
+    --border:#D0D5DD;
+    --bark:#7A5A42;
+    --player:#8B5A2B;
+    --ai:#8A8F98;
+    --leaf: #5B8A4A;
+  }
+  *{box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    line-height:1.5; padding:28px 16px 64px; display:flex; justify-content:center;
+  }
+  .wrap{ width:100%; max-width:1040px; }
+  h1{ font-family:Georgia,"Iowan Old Style",serif; font-size:24px; margin:0 0 4px; }
+  .sub{ color:var(--ink-soft); font-size:14px; margin:0 0 18px; max-width:680px; }
+
+  .top-row{
+    display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:16px;
+  }
+  .chip{
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:8px 14px; font-size:13.5px; display:flex; align-items:center; gap:6px;
+  }
+  .chip strong{ font-size:14px; }
+  .chip.turn{ font-weight:700; }
+  .chip.turn.player{ color:var(--player); border-color:var(--player); }
+  .chip.turn.ai{ color:var(--ai); border-color:var(--ai); }
+
+  .layout{ display:grid; grid-template-columns:1fr; gap:18px; }
+  @media (min-width:820px){ .layout{ grid-template-columns: 1.5fr 1fr; } }
+
+  .tree-panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px;
+  }
+  .stage{ position:relative; width:100%; aspect-ratio: 100 / 130; }
+  .stage svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+  .edge-label{ font-size:4px; fill:var(--ink-soft); font-family:inherit; }
+  .node-dot{ cursor:default; }
+  .node-dot.clickable{ cursor:pointer; }
+
+  .status-bar{
+    display:flex; gap:18px; flex-wrap:wrap; align-items:center;
+    margin-top:14px; padding-top:14px; border-top:1px solid var(--border);
+    font-size:13.5px; color:var(--ink-soft);
+  }
+  .status-bar strong{ color:var(--ink); }
+  .energy-wrap{ display:flex; align-items:center; gap:8px; }
+  .energy-bar{ display:flex; gap:2px; }
+  .energy-slot{
+    width:17px; height:17px; border-radius:4px; font-size:9px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent);
+    font-weight:700; transition:background .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .energy-slot.spent{ background:var(--bg); color:var(--border); border-color:var(--border); }
+  .ground-pile-badge{
+    position:absolute; transform:translate(-50%, 55%);
+    font-size:11px; font-weight:700; background:#EFE6D8; border:1.5px solid var(--bark);
+    border-radius:8px; padding:3px 9px; color:var(--bark); white-space:nowrap; pointer-events:none;
+  }
+  .controls{ margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  button.primary{
+    background:var(--accent); color:#fff; border:none; padding:10px 18px;
+    border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;
+  }
+  button.primary:disabled{ opacity:.5; cursor:default; }
+  button.secondary{
+    background:var(--player); color:#fff; border:none; padding:9px 16px;
+    border-radius:8px; font-size:13.5px; font-weight:600; cursor:pointer; font-family:inherit;
+  }
+  button.secondary:disabled{ opacity:.4; cursor:default; }
+  button.ghost{
+    background:none; border:1px solid var(--border); color:var(--ink);
+    padding:9px 16px; border-radius:8px; font-size:14px; cursor:pointer; font-family:inherit;
+  }
+  .msg{ font-size:14px; min-height:20px; color:var(--ink-soft); }
+
+  .brain-panel{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; }
+  .brain-panel h2{ font-size:15px; margin:0 0 8px; font-family:Georgia,"Iowan Old Style",serif; }
+  .pseudo{
+    background:var(--bg); border:1px solid var(--border); border-radius:8px;
+    padding:10px 12px; font-size:11.5px; line-height:1.6; color:var(--ink-soft);
+    white-space:pre; overflow-x:auto; margin:0 0 12px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  .trace{ font-size:13px; max-height:260px; overflow-y:auto; }
+  .trace-line{ padding:6px 9px; border-radius:6px; margin-bottom:4px; background:var(--bg); border-left:3px solid var(--border); }
+  .trace-line.picked{ border-left-color:var(--ai); background:#F1F0F4; font-weight:600; }
+  .trace-line.rejected{ color:var(--ink-soft); }
+  .trace-line.event{ border-left-color:var(--accent); background:var(--accent-soft); font-weight:600; }
+
+  .piles{ display:flex; gap:16px; margin-top:16px; flex-wrap:wrap; }
+  .pile{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; flex:1; min-width:200px;
+  }
+  .pile h3{ margin:0 0 6px; font-size:14px; }
+  .pile.player h3{ color:var(--player); }
+  .pile.ai h3{ color:var(--ai); }
+  .pile .nuts{ font-size:18px; letter-spacing:2px; line-height:1.4; min-height:24px; }
+  .pile .count{ font-size:13px; color:var(--ink-soft); margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🐿️ Squirrel Scramble — Weighted Tree</h1>
+  <p class="sub">Each turn you get a limited energy budget. Moving along a branch costs energy equal to its number, in either direction. Collect as many nuts as you can — but you have to make it back to the ground, or you lose everything you're carrying that turn.</p>
+
+  <div class="top-row">
+    <div class="chip">Round <strong id="roundNum">0</strong> of <strong id="roundTotal">10</strong></div>
+    <div class="chip">Energy budget this round: <strong id="energyBudgetChip">–</strong></div>
+    <div class="chip turn" id="turnChip">Press Start to begin</div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="tree-panel">
+        <div class="stage" id="stage">
+          <svg id="svgLayer" viewBox="0 0 100 130" preserveAspectRatio="xMidYMid meet"></svg>
+          <div id="tokenLayer"></div>
+          <div id="groundLayer"></div>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div class="energy-wrap">
+          <span>Energy:</span>
+          <div class="energy-bar" id="energyBar"></div>
+          <strong id="energyLeft">–</strong>
+        </div>
+        <div>Cost home from here: <strong id="costHome">–</strong></div>
+        <div>Carrying: <strong id="carrying">0</strong> nut(s)</div>
+      </div>
+
+      <div class="controls">
+        <button class="primary" id="mainBtn">Start Game</button>
+        <button class="secondary" id="homeBtn" disabled>🏠 Return Home</button>
+        <button class="ghost" id="resetBtn">Reset</button>
+      </div>
+      <p class="msg" id="msg"></p>
+    </div>
+
+    <div class="brain-panel">
+      <h2>The AI squirrel's plan</h2>
+      <pre class="pseudo">Loop while energy remains:
+  For each nut cluster still on the tree:
+    detour cost = there-and-back from here
+    afford it? energy ≥ detour cost?
+    value = nuts in cluster ÷ detour cost
+  Pick the BEST-VALUE affordable cluster
+  (greedy — not a full search of every
+   possible route, so it can be beaten
+   by a human with a better whole plan)
+  No affordable cluster left → head home</pre>
+      <div class="trace" id="trace">
+        <div class="trace-line">Press "Start Game" — the AI's reasoning for each turn will appear here, one step at a time.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="piles">
+    <div class="pile player">
+      <h3>🐿️ You</h3>
+      <div class="nuts" id="playerNuts"></div>
+      <div class="count"><span id="playerScore">0</span> nuts banked</div>
+    </div>
+    <div class="pile ai">
+      <h3>🐿️ AI</h3>
+      <div class="nuts" id="aiNuts"></div>
+      <div class="count"><span id="aiScore">0</span> nuts banked</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- Tree data ----------------
+   Every node (except root) has a parent and an edge weight to that parent.
+   Weight applies equally in both directions. Leaves (A–N) are where nuts
+   can appear; the jX nodes are plain branch junctions with no nuts. */
+const NODES = {
+  root: { x:50,  y:124, parent:null,  weight:0, leaf:false },
+
+  jL1:  { x:42,  y:106, parent:'root', weight:1, leaf:false },
+  A:    { x:28,  y:98,  parent:'jL1',  weight:1, leaf:true },
+  jL2:  { x:36,  y:90,  parent:'jL1',  weight:2, leaf:false },
+  D:    { x:22,  y:76,  parent:'jL2',  weight:2, leaf:true },
+  jL3:  { x:44,  y:74,  parent:'jL2',  weight:2, leaf:false },
+  jL4:  { x:38,  y:56,  parent:'jL3',  weight:1, leaf:false },
+  G:    { x:30,  y:40,  parent:'jL4',  weight:1, leaf:true },
+  H:    { x:46,  y:38,  parent:'jL4',  weight:1, leaf:true },
+  jL5:  { x:54,  y:58,  parent:'jL3',  weight:2, leaf:false },
+  F:    { x:48,  y:46,  parent:'jL5',  weight:1, leaf:true },
+  jL6:  { x:62,  y:42,  parent:'jL5',  weight:1, leaf:false },
+  E:    { x:56,  y:26,  parent:'jL6',  weight:1, leaf:true },
+  I:    { x:70,  y:28,  parent:'jL6',  weight:1, leaf:true },
+  jL7:  { x:22,  y:92,  parent:'jL1',  weight:2, leaf:false },
+  B:    { x:10,  y:82,  parent:'jL7',  weight:2, leaf:true },
+  C:    { x:16,  y:98,  parent:'jL7',  weight:1, leaf:true },
+
+  jR1:  { x:62,  y:108, parent:'root', weight:2, leaf:false },
+  J:    { x:76,  y:100, parent:'jR1',  weight:2, leaf:true },
+  jR2:  { x:70,  y:92,  parent:'jR1',  weight:2, leaf:false },
+  K:    { x:62,  y:78,  parent:'jR2',  weight:2, leaf:true },
+  N:    { x:84,  y:84,  parent:'jR2',  weight:2, leaf:true },
+  jR3:  { x:78,  y:70,  parent:'jR2',  weight:2, leaf:false },
+  L:    { x:72,  y:50,  parent:'jR3',  weight:2, leaf:true },
+  M:    { x:88,  y:52,  parent:'jR3',  weight:3, leaf:true }
+};
+const LEAVES = Object.keys(NODES).filter(id => NODES[id].leaf);
+
+// Extra non-branch connections — "jump" shortcuts a squirrel can leap
+// directly across, independent of the tree's parent/child structure.
+const EXTRA_EDGES = [
+  { a: 'K', b: 'jL3', weight: 3 },
+  { a: 'L', b: 'jL5', weight: 3 }
+];
+
+// Build a full adjacency list (tree edges + extra jump edges) and use
+// Dijkstra for shortest paths, since jump edges mean the shortest route
+// between two nodes isn't always the plain tree path anymore.
+const ADJ = {};
+Object.keys(NODES).forEach(id => ADJ[id] = []);
+Object.entries(NODES).forEach(([id, n]) => {
+  if (n.parent){
+    ADJ[id].push({ to: n.parent, w: n.weight });
+    ADJ[n.parent].push({ to: id, w: n.weight });
+  }
+});
+EXTRA_EDGES.forEach(({ a, b, weight }) => {
+  ADJ[a].push({ to: b, w: weight });
+  ADJ[b].push({ to: a, w: weight });
+});
+
+function neighbours(id){ return ADJ[id].map(e => e.to); }
+function edgeWeight(a, b){
+  const e = ADJ[a].find(e => e.to === b);
+  if (!e) throw new Error('not adjacent: ' + a + ',' + b);
+  return e.w;
+}
+function shortestPath(start, end){
+  const dist = {}, prev = {}, visited = new Set();
+  Object.keys(NODES).forEach(id => dist[id] = Infinity);
+  dist[start] = 0;
+  const queue = [start];
+  while (queue.length){
+    queue.sort((a, b) => dist[a] - dist[b]);
+    const u = queue.shift();
+    if (visited.has(u)) continue;
+    visited.add(u);
+    if (u === end) break;
+    ADJ[u].forEach(({ to, w }) => {
+      if (visited.has(to)) return;
+      const nd = dist[u] + w;
+      if (nd < dist[to]){
+        dist[to] = nd;
+        prev[to] = u;
+        queue.push(to);
+      }
+    });
+  }
+  const path = [end];
+  let cur = end;
+  while (prev[cur] !== undefined){ cur = prev[cur]; path.unshift(cur); }
+  return { path, cost: dist[end] };
+}
+function pathBetween(a, b){ return shortestPath(a, b).path; }
+function pathCost(path){
+  let c = 0;
+  for (let i = 0; i < path.length - 1; i++) c += edgeWeight(path[i], path[i + 1]);
+  return c;
+}
+function costHomeFrom(id){ return shortestPath(id, 'root').cost; }
+
+/* ---------------- Game constants ---------------- */
+const TOTAL_ROUNDS = 10;
+const SPAWN_WINDOW = TOTAL_ROUNDS - 1;  // tree stays topped up through round 9
+const INITIAL_NUT_COUNT = 11;           // start lush — most of the tree already has something
+const TARGET_OCCUPIED_LEAVES = 11;      // each round, top back up toward this many of the 14 leaves holding nuts
+const AI_STEP_DELAY_MS = 1700;
+
+// Energy ramps gently — edit this to flatten, steepen, or remove the ramp.
+// Base raised to 14 (from 10) after playtesting: with only 10, most of the
+// tree was unreachable round-trip from turn one, so there wasn't really a
+// choice to make. At 14, about two-thirds of the leaves are viable early,
+// with the deepest ones opening up as energy ramps through round 10.
+function energyForRound(round){
+  return 14 + Math.floor((round - 1) / 2);
+}
+
+/* ---------------- Game state ---------------- */
+let round = 0;
+let nuts = {};                // leafId -> count (0-3) of nuts currently on that leaf
+let groundPile = 0;           // nuts dropped from a "stuck" event, sitting at the base of the tree
+let bankedScore = { player:0, ai:0 };
+let turn = null;               // 'player' | 'ai' | null
+let energyLeft = 0;
+let pos = 'root';
+let carried = 0;
+let gameOver = false;
+let aiRunning = false;
+let phase = 'notStarted'; // notStarted | playerTurn | playerDoneAwaitingAI | aiTurn | roundDoneAwaitingNext | gameOver
+
+const $ = id => document.getElementById(id);
+
+/* ---------------- Sound effects (synthesized, no audio files needed) ---------------- */
+let audioCtx = null;
+function getAudioCtx(){
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playCrunch(){
+  try{
+    const ctx = getAudioCtx();
+    const dur = 0.1;
+    const buffer = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1800;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.35;
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    noise.start();
+  }catch(e){ /* audio not available, fail silently */ }
+}
+function playSqueak(){
+  try{
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(900, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.16);
+  }catch(e){ /* audio not available, fail silently */ }
+}
+function playPop(){
+  try{
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(180, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.15);
+  }catch(e){ /* audio not available, fail silently */ }
+}
+
+/* ---------------- Rendering ---------------- */
+function seasonColor(){
+  const t = Math.max(0, Math.min(1, (round - 1) / (TOTAL_ROUNDS - 1 || 1)));
+  const stops = [ [91,138,74], [217,133,46], [107,74,52] ]; // green -> orange -> bark brown
+  const seg = t < 0.5 ? 0 : 1;
+  const localT = t < 0.5 ? t / 0.5 : (t - 0.5) / 0.5;
+  const c0 = stops[seg], c1 = stops[seg+1];
+  const r = Math.round(c0[0] + (c1[0]-c0[0]) * localT);
+  const g = Math.round(c0[1] + (c1[1]-c0[1]) * localT);
+  const b = Math.round(c0[2] + (c1[2]-c0[2]) * localT);
+  return `rgb(${r},${g},${b})`;
+}
+
+function buildStage(){
+  const svg = $('svgLayer');
+  svg.innerHTML = '';
+  const ns = 'http://www.w3.org/2000/svg';
+
+  // A short trunk before the first fork — purely visual; the actual
+  // 'root' node coordinate is unchanged (that's still where the ground,
+  // the squirrel start position, and the nut pile render).
+  const TRUNK_TOP = { x: 50, y: 114 };
+  const trunk = document.createElementNS(ns, 'line');
+  trunk.setAttribute('x1', 50); trunk.setAttribute('y1', 126);
+  trunk.setAttribute('x2', TRUNK_TOP.x); trunk.setAttribute('y2', TRUNK_TOP.y);
+  trunk.setAttribute('stroke', 'var(--bark)');
+  trunk.setAttribute('stroke-width', 2.4);
+  trunk.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(trunk);
+
+  // edges (tree branches)
+  Object.entries(NODES).forEach(([id, n]) => {
+    if (!n.parent) return;
+    const p = n.parent === 'root' ? TRUNK_TOP : NODES[n.parent];
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', p.x); line.setAttribute('y1', p.y);
+    line.setAttribute('x2', n.x); line.setAttribute('y2', n.y);
+    line.setAttribute('stroke', 'var(--bark)');
+    line.setAttribute('stroke-width', n.leaf ? 0.6 : 0.9);
+    line.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(line);
+
+    const midX = (p.x + n.x) / 2, midY = (p.y + n.y) / 2;
+    const label = document.createElementNS(ns, 'text');
+    label.setAttribute('x', midX + 1.5);
+    label.setAttribute('y', midY);
+    label.setAttribute('class', 'edge-label');
+    label.textContent = n.weight;
+    svg.appendChild(label);
+  });
+
+  // extra jump-shortcut edges — dotted, since these aren't real branches
+  EXTRA_EDGES.forEach(({ a, b, weight }) => {
+    const pa = NODES[a], pb = NODES[b];
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', pa.x); line.setAttribute('y1', pa.y);
+    line.setAttribute('x2', pb.x); line.setAttribute('y2', pb.y);
+    line.setAttribute('stroke', 'var(--accent)');
+    line.setAttribute('stroke-width', 0.5);
+    line.setAttribute('stroke-dasharray', '1.2,1');
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('opacity', '0.75');
+    svg.appendChild(line);
+
+    const midX = (pa.x + pb.x) / 2, midY = (pa.y + pb.y) / 2;
+    const label = document.createElementNS(ns, 'text');
+    label.setAttribute('x', midX + 1.5);
+    label.setAttribute('y', midY);
+    label.setAttribute('class', 'edge-label');
+    label.setAttribute('fill', 'var(--accent)');
+    label.textContent = weight;
+    svg.appendChild(label);
+  });
+
+  // ground
+  const ground = document.createElementNS(ns, 'ellipse');
+  ground.setAttribute('cx', 50); ground.setAttribute('cy', 126);
+  ground.setAttribute('rx', 14); ground.setAttribute('ry', 2.2);
+  ground.setAttribute('fill', '#C7BFAE');
+  svg.appendChild(ground);
+
+  // nodes: every node (junction or leaf-bearing) renders as the same
+  // circular "knuckle" sitting on the branch — that's the clickable spot.
+  // Leaves and nuts are decoration growing out from a leaf-bearing node,
+  // not separate click targets, per your sketch.
+  Object.entries(NODES).forEach(([id, n]) => {
+    if (id === 'root') return;
+
+    if (!n.leaf){
+      const visual = document.createElementNS(ns, 'circle');
+      visual.setAttribute('cx', n.x); visual.setAttribute('cy', n.y);
+      visual.setAttribute('r', 2.1);
+      visual.setAttribute('fill', 'var(--bark)');
+      visual.setAttribute('stroke', 'rgba(0,0,0,.25)');
+      visual.setAttribute('stroke-width', '0.25');
+      svg.appendChild(visual);
+      const sheen = document.createElementNS(ns, 'circle');
+      sheen.setAttribute('cx', n.x - 0.6); sheen.setAttribute('cy', n.y - 0.6);
+      sheen.setAttribute('r', 0.8);
+      sheen.setAttribute('fill', 'rgba(255,255,255,.3)');
+      svg.appendChild(sheen);
+
+      // Bigger invisible hit target layered on top — the visible knuckle is
+      // deliberately small, but needs a much larger tap area than that to
+      // be reliably clickable.
+      const hit = document.createElementNS(ns, 'circle');
+      hit.setAttribute('cx', n.x); hit.setAttribute('cy', n.y);
+      hit.setAttribute('r', 4.5);
+      hit.setAttribute('fill', 'transparent');
+      hit.setAttribute('id', 'dot-' + id);
+      hit.setAttribute('class', 'node-dot');
+      hit.style.pointerEvents = 'all';
+      hit.addEventListener('click', () => onNodeClick(id));
+      svg.appendChild(hit);
+    } else {
+      const g = document.createElementNS(ns, 'g');
+      g.setAttribute('id', 'leaf-' + id);
+      g.setAttribute('class', 'node-dot');
+      g.setAttribute('transform', `translate(${n.x},${n.y})`);
+      g.innerHTML = `
+        <g transform="rotate(-32)"><path d="M0,0 C1.9,-1.4 1.9,-4 0,-5.4 C-1.9,-4 -1.9,-1.4 0,0 Z" fill="var(--leaf)" stroke="rgba(0,0,0,.15)" stroke-width="0.15"/></g>
+        <g transform="rotate(0)"><path d="M0,0 C1.9,-1.4 1.9,-4 0,-5.4 C-1.9,-4 -1.9,-1.4 0,0 Z" fill="var(--leaf)" stroke="rgba(0,0,0,.15)" stroke-width="0.15"/></g>
+        <g transform="rotate(32)"><path d="M0,0 C1.9,-1.4 1.9,-4 0,-5.4 C-1.9,-4 -1.9,-1.4 0,0 Z" fill="var(--leaf)" stroke="rgba(0,0,0,.15)" stroke-width="0.15"/></g>
+        <circle class="nutdot nutdot-1" cx="-2.8" cy="-3.6" r="1.15" fill="#B4530A" stroke="#7A3A08" stroke-width="0.2" style="display:none"/>
+        <circle class="nutdot nutdot-2" cx="2.8" cy="-3.6" r="1.15" fill="#B4530A" stroke="#7A3A08" stroke-width="0.2" style="display:none"/>
+        <circle class="nutdot nutdot-3" cx="0" cy="-4.6" r="1.15" fill="#B4530A" stroke="#7A3A08" stroke-width="0.2" style="display:none"/>
+        <circle cx="0" cy="0" r="2.3" fill="var(--bark)" stroke="rgba(0,0,0,.25)" stroke-width="0.25"/>
+        <circle cx="-0.6" cy="-0.6" r="0.8" fill="rgba(255,255,255,.3)"/>
+        <text x="0" y="0.9" text-anchor="middle" font-size="2.7" fill="#fff" font-weight="700">${id}</text>
+      `;
+      g.addEventListener('click', () => onNodeClick(id));
+      svg.appendChild(g);
+    }
+  });
+
+  // tokens
+  const layer = $('tokenLayer');
+  layer.innerHTML = `
+    <div id="tokPlayer" style="position:absolute; width:18px; height:18px; transform:translate(-60%,-90%);">
+      <svg viewBox="0 0 20 20"><g fill="var(--player)">
+        <ellipse cx="10" cy="12" rx="6" ry="5"/>
+        <circle cx="14" cy="7" r="3.4"/>
+        <path d="M4,12 C-2,10 -3,2 3,1 C7,0 8,6 4,12 Z"/>
+      </g></svg>
+    </div>
+    <div id="tokAI" style="position:absolute; width:18px; height:18px; transform:translate(-40%,-90%);">
+      <svg viewBox="0 0 20 20"><g fill="var(--ai)">
+        <ellipse cx="10" cy="12" rx="6" ry="5"/>
+        <circle cx="14" cy="7" r="3.4"/>
+        <path d="M4,12 C-2,10 -3,2 3,1 C7,0 8,6 4,12 Z"/>
+      </g></svg>
+    </div>
+  `;
+  layer.querySelectorAll('div').forEach(el => el.style.transition = 'left .5s ease, top .5s ease');
+}
+
+function pctPos(id){
+  const n = NODES[id];
+  return { left: (n.x / 100 * 100) + '%', top: (n.y / 130 * 100) + '%' };
+}
+function placeToken(which, id){
+  const el = which === 'player' ? $('tokPlayer') : $('tokAI');
+  const p = pctPos(id);
+  el.style.left = p.left; el.style.top = p.top;
+}
+
+function refreshLeafVisuals(){
+  const col = seasonColor();
+  LEAVES.forEach(id => {
+    const g = $('leaf-' + id);
+    if (!g) return;
+    g.querySelectorAll('path').forEach(p => p.setAttribute('fill', col));
+    const count = nuts[id] || 0;
+    [1, 2, 3].forEach(n => {
+      const dot = g.querySelector('.nutdot-' + n);
+      dot.style.display = n <= count ? 'block' : 'none';
+    });
+  });
+}
+
+function renderGroundPile(){
+  const layer = $('groundLayer');
+  layer.innerHTML = '';
+  if (groundPile > 0){
+    const p = pctPos('root');
+    const div = document.createElement('div');
+    div.className = 'ground-pile-badge';
+    div.style.left = p.left;
+    div.style.top = p.top;
+    div.innerHTML = `🌰 pile on the ground: <strong>${groundPile}</strong>`;
+    layer.appendChild(div);
+  }
+}
+
+function renderEnergyBar(total, remaining){
+  const bar = $('energyBar');
+  bar.innerHTML = '';
+  for (let i = 1; i <= total; i++){
+    const s = document.createElement('div');
+    s.className = 'energy-slot' + (i <= remaining ? '' : ' spent');
+    s.textContent = i;
+    bar.appendChild(s);
+  }
+}
+
+function clearClickable(){
+  document.querySelectorAll('.node-dot').forEach(el => el.classList.remove('clickable'));
+}
+function setClickable(){
+  clearClickable();
+  if (turn !== 'player' || gameOver) return;
+  neighbours(pos).forEach(nb => {
+    if (nb === 'root') return; // no dedicated element for root — use "Return Home" button
+    const el = (NODES[nb].leaf ? $('leaf-' + nb) : $('dot-' + nb));
+    const cost = edgeWeight(pos, nb);
+    if (cost <= energyLeft) el.classList.add('clickable');
+  });
+}
+
+/* ---------------- Trace panel ---------------- */
+function clearTrace(){ $('trace').innerHTML = ''; }
+function addTrace(text, cls){
+  const div = document.createElement('div');
+  div.className = 'trace-line' + (cls ? ' ' + cls : '');
+  div.textContent = text;
+  $('trace').appendChild(div);
+  $('trace').scrollTop = $('trace').scrollHeight;
+}
+function delay(ms){ return new Promise(res => setTimeout(res, ms)); }
+
+/* ---------------- Nut spawning ---------------- */
+function randomClusterSize(){
+  const r = Math.random();
+  return r < 0.55 ? 1 : (r < 0.85 ? 2 : 3); // mostly singles, occasional 2s, rare 3s
+}
+// Picks leaves weighted toward LOWER round-trip cost, so nuts more often
+// land somewhere actually reachable early on rather than uniformly at
+// random across the whole tree (which too often buried everything deep).
+function weightedPickLeaves(candidates, count){
+  const pool = candidates.map(id => ({ id, w: 1 / Math.pow(costHomeFrom(id), 1.3) }));
+  const picked = [];
+  for (let n = 0; n < count && pool.length; n++){
+    const totalW = pool.reduce((s, p) => s + p.w, 0);
+    let r = Math.random() * totalW;
+    let idx = 0;
+    for (; idx < pool.length - 1; idx++){ r -= pool[idx].w; if (r <= 0) break; }
+    picked.push(pool[idx].id);
+    pool.splice(idx, 1);
+  }
+  return picked;
+}
+function totalNutsOnTree(){
+  return LEAVES.reduce((s, id) => s + (nuts[id] || 0), 0) + groundPile;
+}
+function spawnInitialNuts(){
+  LEAVES.forEach(id => nuts[id] = 0);
+  groundPile = 0;
+  weightedPickLeaves(LEAVES, INITIAL_NUT_COUNT).forEach(id => { nuts[id] = randomClusterSize(); });
+}
+function maybeSpawnMore(){
+  if (round > SPAWN_WINDOW) return;
+  const occupied = LEAVES.filter(id => nuts[id] > 0).length;
+  const needed = TARGET_OCCUPIED_LEAVES - occupied;
+  if (needed <= 0) return;
+  const free = LEAVES.filter(id => !nuts[id]);
+  weightedPickLeaves(free, Math.min(needed, free.length)).forEach(id => { nuts[id] = randomClusterSize(); });
+}
+
+// Grabs whatever cluster is on a leaf. Ground-pile pickup is separate —
+// see collectGroundPile() — since dropped nuts always fall to the ground.
+function pickupAt(nodeId){
+  let gained = 0;
+  if (NODES[nodeId].leaf && nuts[nodeId] > 0){
+    gained += nuts[nodeId];
+    nuts[nodeId] = 0;
+    refreshLeafVisuals();
+  }
+  return gained;
+}
+function collectGroundPile(){
+  if (groundPile <= 0) return 0;
+  const g = groundPile;
+  groundPile = 0;
+  renderGroundPile();
+  return g;
+}
+
+/* ---------------- Score piles ---------------- */
+function renderPiles(){
+  $('playerScore').textContent = bankedScore.player;
+  $('aiScore').textContent = bankedScore.ai;
+  $('playerNuts').textContent = '🌰'.repeat(Math.min(bankedScore.player, 40));
+  $('aiNuts').textContent = '🌰'.repeat(Math.min(bankedScore.ai, 40));
+}
+
+/* ---------------- Player turn ---------------- */
+function updateStatusBar(){
+  $('energyLeft').textContent = energyLeft;
+  renderEnergyBar(energyForRound(round), energyLeft);
+  $('costHome').textContent = costHomeFrom(pos);
+  $('carrying').textContent = carried;
+  $('homeBtn').disabled = !(turn === 'player' && !gameOver);
+}
+
+function startPlayerTurn(){
+  turn = 'player';
+  phase = 'playerTurn';
+  pos = 'root';
+  carried = 0;
+  energyLeft = energyForRound(round);
+  $('turnChip').textContent = '🐿️ Your turn';
+  $('turnChip').className = 'chip turn player';
+  const ground = collectGroundPile();
+  if (ground > 0){
+    carried += ground;
+    playCrunch();
+    $('msg').textContent = `You found ${ground} nut${ground === 1 ? '' : 's'} waiting on the ground! Carrying ${carried}. Click a glowing node to hop there.`;
+  } else {
+    $('msg').textContent = 'Click a glowing node to hop there.';
+  }
+  placeToken('player', 'root');
+  updateStatusBar();
+  setClickable();
+  $('mainBtn').disabled = true;
+}
+
+function onNodeClick(id){
+  if (turn !== 'player' || gameOver) return;
+  if (!neighbours(pos).includes(id)){
+    const here = pos === 'root' ? 'the ground' : pos;
+    $('msg').textContent = `Can't jump straight there from ${here} — ${id} isn't directly connected. Hop via a branch point (the small dots) to work your way over.`;
+    return;
+  }
+  const cost = edgeWeight(pos, id);
+  if (cost > energyLeft){
+    $('msg').textContent = `Not enough energy to reach ${id} from here — it costs ${cost}, you have ${energyLeft} left.`;
+    return;
+  }
+
+  energyLeft -= cost;
+  pos = id;
+  placeToken('player', id);
+
+  const gained = pickupAt(id);
+  if (gained > 0){
+    carried += gained;
+    playCrunch();
+    $('msg').textContent = `Grabbed ${gained} nut${gained > 1 ? 's' : ''} at ${id}! Carrying ${carried} — still need to get home.`;
+  }
+
+  updateStatusBar();
+
+  if (energyLeft < costHomeFrom(pos)){
+    endPlayerTurn(false, 'stuck');
+    return;
+  }
+  if (pos === 'root'){
+    endPlayerTurn(true, 'homeAlready');
+    return;
+  }
+  setClickable();
+}
+
+function returnHome(){
+  if (turn !== 'player' || gameOver) return;
+  const cost = costHomeFrom(pos);
+  if (cost > energyLeft) return; // shouldn't happen given the stuck check, but guard anyway
+  energyLeft -= cost;
+  pos = 'root';
+  placeToken('player', 'root');
+  updateStatusBar();
+  endPlayerTurn(true, 'chose');
+}
+
+function endPlayerTurn(madeItHome, reason){
+  clearClickable();
+  if (madeItHome){
+    bankedScore.player += carried;
+    renderPiles();
+    if (carried > 0) playSqueak();
+    $('msg').textContent = carried > 0
+      ? `Home safe with ${carried} nut(s) banked.`
+      : `Home safe (no nuts collected this turn).`;
+  } else {
+    if (carried > 0){
+      groundPile += carried;
+      renderGroundPile();
+      playPop();
+    }
+    $('msg').textContent = `Stuck! Not enough energy to get home — you dropped ${carried} nut${carried === 1 ? '' : 's'}. They've fallen to the ground, and whoever's there next turn (even the AI) will scoop them up automatically.`;
+  }
+  turn = null;
+  phase = 'playerDoneAwaitingAI';
+  updateStatusBar();
+  $('mainBtn').disabled = false;
+  $('mainBtn').textContent = "AI's Turn ▶";
+}
+
+/* ---------------- AI turn ---------------- */
+async function runAITurn(){
+  turn = 'ai';
+  aiRunning = true;
+  phase = 'aiTurn';
+  $('turnChip').textContent = '🤖 AI thinking…';
+  $('turnChip').className = 'chip turn ai';
+  $('mainBtn').disabled = true;
+  clearTrace();
+
+  let simPos = 'root';
+  let simEnergy = energyForRound(round);
+  let simCarried = 0;
+
+  addTrace(`AI's budget this round: ${simEnergy} energy.`, 'event');
+  await delay(AI_STEP_DELAY_MS * 0.6);
+
+  const startGain = collectGroundPile();
+  if (startGain > 0){
+    simCarried += startGain;
+    playCrunch();
+    addTrace(`Found ${startGain} nut${startGain > 1 ? 's' : ''} waiting on the ground!`, 'event');
+    await delay(AI_STEP_DELAY_MS * 0.5);
+  }
+
+  while (true){
+    const candidates = LEAVES.filter(id => nuts[id] > 0);
+    if (candidates.length === 0){
+      addTrace('No nut clusters left worth checking. Heading home.', 'event');
+      break;
+    }
+    let best = null, bestScore = -Infinity, bestCost = 0;
+    for (const id of candidates){
+      const there = pathCost(pathBetween(simPos, id));
+      const back = costHomeFrom(id);
+      const total = there + back;
+      const affordable = total <= simEnergy;
+      const value = nuts[id];
+      const score = value / Math.max(there, 0.001);
+      addTrace(
+        `Check ${id} (${value} nut${value > 1 ? 's' : ''}): there+back = ${total} energy — ${affordable ? 'affordable' : 'too far, skip'}`,
+        affordable ? null : 'rejected'
+      );
+      if (affordable && score > bestScore){
+        best = id; bestScore = score; bestCost = there;
+      }
+      await delay(AI_STEP_DELAY_MS * 0.55);
+    }
+    if (best === null){
+      addTrace("Nothing left is affordable and safe. Heading home.", 'event');
+      break;
+    }
+    addTrace(`Best value for the detour: ${best} (${nuts[best]} nut${nuts[best] > 1 ? 's' : ''}). Moving there.`, 'picked');
+    await delay(AI_STEP_DELAY_MS * 0.5);
+    const path = pathBetween(simPos, best);
+    for (let i = 1; i < path.length; i++){
+      await delay(AI_STEP_DELAY_MS);
+      placeToken('ai', path[i]);
+      const gained = pickupAt(path[i]);
+      if (gained > 0){
+        simCarried += gained;
+        playCrunch();
+        addTrace(`Picked up ${gained} nut${gained > 1 ? 's' : ''} at ${path[i]}. Carrying ${simCarried}.`, 'event');
+      }
+    }
+    simEnergy -= bestCost;
+    simPos = best;
+    await delay(AI_STEP_DELAY_MS * 0.6);
+  }
+
+  // walk home
+  addTrace('Heading home…', 'event');
+  const homePath = pathBetween(simPos, 'root');
+  for (let i = 1; i < homePath.length; i++){
+    await delay(AI_STEP_DELAY_MS);
+    placeToken('ai', homePath[i]);
+  }
+  bankedScore.ai += simCarried;
+  renderPiles();
+  if (simCarried > 0) playSqueak();
+  addTrace(`Home safe with ${simCarried} nut${simCarried === 1 ? '' : 's'} banked.`, 'event');
+
+  aiRunning = false;
+  turn = null;
+  phase = 'roundDoneAwaitingNext';
+  $('mainBtn').disabled = false;
+  $('mainBtn').textContent = (round >= TOTAL_ROUNDS) ? 'See Final Score' : 'Next Round ▶';
+}
+
+/* ---------------- Round / game flow ---------------- */
+function advanceRoundHeader(){
+  $('roundNum').textContent = round;
+  $('energyBudgetChip').textContent = energyForRound(round);
+}
+
+function beginRound(){
+  round++;
+  if (round > TOTAL_ROUNDS){ endGame('rounds'); return; }
+  maybeSpawnMore();
+  refreshLeafVisuals();
+  advanceRoundHeader();
+  if (totalNutsOnTree() === 0 && round > SPAWN_WINDOW){
+    endGame('empty'); return;
+  }
+  startPlayerTurn();
+}
+
+function endGame(reason){
+  gameOver = true;
+  turn = null;
+  phase = 'gameOver';
+  clearClickable();
+  $('turnChip').textContent = 'Game over';
+  $('turnChip').className = 'chip turn';
+  const winner = bankedScore.player > bankedScore.ai ? 'You win! 🎉'
+    : bankedScore.player < bankedScore.ai ? 'The AI wins this time.'
+    : "It's a tie!";
+  const why = reason === 'empty' ? 'Every nut has been collected.' : 'The leaves have gone fully brown — season over.';
+  $('msg').textContent = `${why} Final score — You: ${bankedScore.player}, AI: ${bankedScore.ai}. ${winner}`;
+  addTrace(`${why} ${winner}`, 'event');
+  $('mainBtn').textContent = 'Play Again';
+  $('mainBtn').disabled = false;
+  $('homeBtn').disabled = true;
+}
+
+function resetGame(){
+  round = 0;
+  bankedScore = { player: 0, ai: 0 };
+  gameOver = false;
+  turn = null;
+  aiRunning = false;
+  phase = 'notStarted';
+  spawnInitialNuts();
+  buildStage();
+  placeToken('player', 'root');
+  placeToken('ai', 'root');
+  refreshLeafVisuals();
+  renderGroundPile();
+  renderPiles();
+  $('roundNum').textContent = 0;
+  $('energyBudgetChip').textContent = '–';
+  $('energyBar').innerHTML = '';
+  $('turnChip').textContent = 'Press Start to begin';
+  $('turnChip').className = 'chip turn';
+  $('msg').textContent = '';
+  $('energyLeft').textContent = '–';
+  $('costHome').textContent = '–';
+  $('carrying').textContent = 0;
+  $('homeBtn').disabled = true;
+  clearTrace();
+  $('mainBtn').textContent = 'Start Game';
+  $('mainBtn').disabled = false;
+}
+
+$('mainBtn').addEventListener('click', () => {
+  if (phase === 'gameOver'){ resetGame(); return; }
+  if (phase === 'notStarted'){ beginRound(); return; }
+  if (phase === 'playerDoneAwaitingAI'){ runAITurn(); return; }
+  if (phase === 'roundDoneAwaitingNext'){ beginRound(); return; }
+  // playerTurn / aiTurn: button is disabled during these, nothing to do
+});
+
+$('homeBtn').addEventListener('click', returnHome);
+$('resetBtn').addEventListener('click', resetGame);
+
+resetGame();
+</script>
+</body>
+</html>
