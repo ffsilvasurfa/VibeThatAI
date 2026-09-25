@@ -1,0 +1,123 @@
+body{
+   font-family:Verdana, "sans-serif";
+   padding-left:25px
+}
+
+
+P {font-family:Verdana, sans-serif; font-size:14; color:slategray; overflow:visible; margin-top:10px; margin-bottom:10px; padding-right:10px; padding-left:10pt;	}
+
+A {font-family:sans-serif; font-size:14; color:bluegray; overflow:visible;}
+
+LI {font-family:sans-serif; font-size:14; color:slategray}
+
+H1 {font-family:Verdana, sans-serif; font-size:large; color:#ffffff;
+margin-bottom:10px; padding-right:10px; padding-left:10pt;}
+
+H2 {font-family:sans-serif; font-size:16; color:slategray; margin-top:10px; margin-bottom:10px; padding-right:10px; padding-left:10pt;}
+
+H3 {font-family:Verdana, sans-serif; font-size:16; color:white; margin-top:10px; margin-bottom:10px; padding-right:10px; padding-left:10pt;}
+
+header {font-family:sans-serif; 
+
+}
+
+video {
+        width: 480px;
+        height: 384px;
+        border: 1px solid gray;
+		padding:10px
+}
+      
+      .video-container {
+
+        text-align: center;
+}
+
+section {
+
+width:550px;
+}
+
+#col1 {
+
+position:absolute;   
+left:25px; 
+width:180px;
+}
+#col2 {
+
+position:absolute;   
+left:205px; 
+width:180px;
+}
+#col3 {
+
+position:absolute;   
+left:385px; 
+width:180px;
+}
+#col4 {
+
+position:absolute;   
+left:565px; 
+width:180px;
+}
+
+aside {
+
+-moz-border-radius:10px;
+-webkit-border-radius:10px;
+border-radius:10px; 
+background:#f3f3f3;
+border:1px solid #cccccc;
+
+position:absolute; top:130px; left:605px; width:200px;
+}
+
+nav {
+background:#93f3f3;
+width:800px; 
+height:40px;
+border-radius:10px; 
+border:1px solid #000099;
+
+left:25px;
+
+
+}
+nav ul {
+list-style-image:none;
+list-style-position:outside;
+list-style-type:none;
+margin:0 auto;
+
+}
+nav ul li {
+float:left;
+margin-right:20px;
+display:block;
+line-height:40px;
+}
+nav ul li a{
+float:left;
+margin-right:20px;
+display:block;
+line-height:40px;
+}
+
+
+#my-green-div {
+
+  left: 0px;
+  top: 100px;
+  width: 100px;
+  height: 100px;
+}
+footer{
+background:#000099;
+border-top:1px solid #cccccc;
+border-radius:10px; 
+text-align:center; color:#ffffff;
+position: absolute; bottom:25px; left:25px;
+width:800px; height:40px;
+}
